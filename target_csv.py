@@ -22,8 +22,6 @@ def emit_state(state):
         
 
 def persist_lines(delimiter, quotechar, lines):
-    """Takes a client and a stream and persists all the records to the gate,
-    printing the state to stdout after each batch."""
     state = None
     schemas = {}
     key_properties = {}
