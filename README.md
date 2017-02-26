@@ -26,6 +26,8 @@ and then run `tap-fixerio`, piping its output to `target-csv`:
 › pip install target-csv
 › pip install tap-fixerio
 › tap-fixerio | target-csv
+  INFO Replicating the latest exchange rate data from fixer.io
+  INFO Tap exiting normally
 ```
 
 The data will be written to a file called `exchange_rate.csv` in your
