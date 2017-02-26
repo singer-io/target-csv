@@ -31,6 +31,12 @@ and then run `tap-fixerio`, piping its output to `target-csv`:
 The data will be written to a file called `exchange_rate.csv` in your
 working directory.
 
+```bash
+› cat exchange_rate.csv
+AUD,BGN,BRL,CAD,CHF,CNY,CZK,DKK,GBP,HKD,HRK,HUF,IDR,ILS,INR,JPY,KRW,MXN,MYR,NOK,NZD,PHP,PLN,RON,RUB,SEK,SGD,THB,TRY,ZAR,EUR,USD,date
+1.3023,1.8435,3.0889,1.3109,1.0038,6.869,25.47,7.0076,0.79652,7.7614,7.0011,290.88,13317.0,3.6988,66.608,112.21,1129.4,19.694,4.4405,8.3292,1.3867,50.198,4.0632,4.2577,58.105,8.9724,1.4037,34.882,3.581,12.915,0.9426,1.0,2017-02-24T00:00:00Z
+```
+
 If you're using a different Tap, substitute `tap-fixerio` in the final
 command above to the command used to run your Tap.
 
