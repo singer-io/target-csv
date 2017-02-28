@@ -25,6 +25,7 @@ def persist_lines(delimiter, quotechar, lines):
     state = None
     schemas = {}
     key_properties = {}
+    headers = {}
     for line in lines:
         try:
             o = json.loads(line)
@@ -45,16 +46,28 @@ def persist_lines(delimiter, quotechar, lines):
             schema = schemas[o['stream']]
             validate(o['record'], schema)
 
-            top_level_fields = schema['properties'].keys()
             filename = o['stream'] + '.csv'
 
-            with open(filename, 'a', newline='') as csvfile:
-                writer = csv.DictWriter(csvfile,
-                                        o['record'].keys(),
+            file_is_empty = (not os.path.isfile(filename)) or os.stat(filename).st_size == 0
+
+            if o['stream'] not in headers and not file_is_empty:
+                with open(filename, 'r') as csvfile:
+                    reader = csv.reader(csvfile,
                                         delimiter=delimiter,
                                         quotechar=quotechar)
-                if os.stat(filename).st_size == 0:
+                    first_line = next(reader)
+                    headers[o['stream']] = first_line if first_line else o['record'].keys()
+            else:
+                headers[o['stream']] = o['record'].keys()
+            
+            with open(filename, 'a') as csvfile:
+                writer = csv.DictWriter(csvfile,
+                                        headers[o['stream']],
+                                        delimiter=delimiter,
+                                        quotechar=quotechar)
+                if file_is_empty:
                     writer.writeheader()
+                    
                 writer.writerow(o['record'])    
 
             state = None

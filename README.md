@@ -20,11 +20,11 @@ installation instructions for [Mac](python-mac) or
 from a public data set - as an example.
 
 These commands will install `tap-fixerio` and `target-csv` with pip,
-and then run `tap-fixerio`, piping its output to `target-csv`:
+and then run them together, piping the output of `tap-fixerio` to
+`target-csv`:
 
 ```bash
-› pip install target-csv
-› pip install tap-fixerio
+› pip install target-csv tap-fixerio
 › tap-fixerio | target-csv
   INFO Replicating the latest exchange rate data from fixer.io
   INFO Tap exiting normally
