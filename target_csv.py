@@ -17,21 +17,24 @@ import singer
 logger = singer.get_logger()
 
 def collect():
-    version = pkg_resources.get_distribution('target-csv').version
-    conn = http.client.HTTPSConnection('collector.stitchdata.com', timeout=10)
-    conn.connect()
-    params = {
-        'e': 'se',
-        'aid': 'singer',
-        'se_ca': 'lifecycle',
-        'se_ac': 'open',
-        'se_la': 'target-csv',
-        'se_pr': 'version',
-        'se_va': version,
-    }
-    conn.request('GET', '/i?' + urllib.parse.urlencode(params))
-    response = conn.getresponse()
-    conn.close()
+    try:
+        version = pkg_resources.get_distribution('target-csv').version
+        conn = http.client.HTTPSConnection('collector.stitchdata.com', timeout=10)
+        conn.connect()
+        params = {
+            'e': 'se',
+            'aid': 'singer',
+            'se_ca': 'lifecycle',
+            'se_ac': 'open',
+            'se_la': 'target-csv',
+            'se_pr': 'version',
+            'se_va': version,
+        }
+        conn.request('GET', '/i?' + urllib.parse.urlencode(params))
+        response = conn.getresponse()
+        conn.close()
+    except:
+        logger.debug('Collection request failed')
 
 def emit_state(state):
     if state is not None:
