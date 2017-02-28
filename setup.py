@@ -8,6 +8,7 @@ setup(name='target-csv',
       author='Stitch',
       url='https://singer.io',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
+      py_modules=['target_csv'],
       install_requires=[
           'jsonschema',
           'singer-python>=0.1.0',

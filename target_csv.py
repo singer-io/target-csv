@@ -6,12 +6,32 @@ import os
 import sys
 import json
 import csv
+import threading
+import http.client
+import urllib
+import pkg_resources
 
 from jsonschema import validate
 import singer
 
 logger = singer.get_logger()
 
+def collect():
+    version = pkg_resources.get_distribution('target-csv').version
+    conn = http.client.HTTPSConnection('collector.stitchdata.com', timeout=10)
+    conn.connect()
+    params = {
+        'e': 'se',
+        'aid': 'singer',
+        'se_ca': 'lifecycle',
+        'se_ac': 'open',
+        'se_la': 'target-csv',
+        'se_pr': 'version',
+        'se_va': version,
+    }
+    conn.request('GET', '/i?' + urllib.parse.urlencode(params))
+    response = conn.getresponse()
+    conn.close()
 
 def emit_state(state):
     if state is not None:
@@ -99,6 +119,12 @@ def main():
             config = json.load(input)
     else:
         config = {}
+
+    if not config.get('disable_collection', False):
+        logger.info('Sending tap version information to stitchdata.com. ' +
+                    'To disable sending anonymous usage data, set ' +
+                    'the config parameter "disable_collection" to true')
+        threading.Thread(target=collect).start()
 
     input = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
     state = None
