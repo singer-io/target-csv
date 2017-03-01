@@ -10,31 +10,12 @@ import threading
 import http.client
 import urllib
 import pkg_resources
+import collections
 
 from jsonschema import validate
 import singer
 
 logger = singer.get_logger()
-
-def collect():
-    try:
-        version = pkg_resources.get_distribution('target-csv').version
-        conn = http.client.HTTPSConnection('collector.stitchdata.com', timeout=10)
-        conn.connect()
-        params = {
-            'e': 'se',
-            'aid': 'singer',
-            'se_ca': 'lifecycle',
-            'se_ac': 'open',
-            'se_la': 'target-csv',
-            'se_pr': 'version',
-            'se_va': version,
-        }
-        conn.request('GET', '/i?' + urllib.parse.urlencode(params))
-        response = conn.getresponse()
-        conn.close()
-    except:
-        logger.debug('Collection request failed')
 
 def emit_state(state):
     if state is not None:
@@ -42,13 +23,23 @@ def emit_state(state):
         logger.debug('Emitting state {}'.format(line))
         sys.stdout.write("{}\n".format(line))
         sys.stdout.flush()
-        
 
+def flatten(d, parent_key='', sep='__'):
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, collections.MutableMapping):
+            items.extend(flatten(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, str(v) if type(v) is list else v))
+    return dict(items)
+        
 def persist_lines(delimiter, quotechar, lines):
     state = None
     schemas = {}
     key_properties = {}
     headers = {}
+    
     for line in lines:
         try:
             o = json.loads(line)
@@ -70,28 +61,30 @@ def persist_lines(delimiter, quotechar, lines):
             validate(o['record'], schema)
 
             filename = o['stream'] + '.csv'
-
             file_is_empty = (not os.path.isfile(filename)) or os.stat(filename).st_size == 0
 
+            flattened_record = flatten(o['record'])
+            
             if o['stream'] not in headers and not file_is_empty:
                 with open(filename, 'r') as csvfile:
                     reader = csv.reader(csvfile,
                                         delimiter=delimiter,
                                         quotechar=quotechar)
                     first_line = next(reader)
-                    headers[o['stream']] = first_line if first_line else o['record'].keys()
+                    headers[o['stream']] = first_line if first_line else flattened_record.keys()
             else:
-                headers[o['stream']] = o['record'].keys()
+                headers[o['stream']] = flattened_record.keys()
             
             with open(filename, 'a') as csvfile:
-                writer = csv.DictWriter(csvfile,
+                writer = csv.DictWriter(csvfile,                                        
                                         headers[o['stream']],
+                                        extrasaction='ignore',
                                         delimiter=delimiter,
                                         quotechar=quotechar)
                 if file_is_empty:
                     writer.writeheader()
                     
-                writer.writerow(o['record'])    
+                writer.writerow(flattened_record)    
 
             state = None
         elif t == 'STATE':
@@ -108,8 +101,29 @@ def persist_lines(delimiter, quotechar, lines):
         else:
             raise Exception("Unknown message type {} in message {}"
                             .format(o['type'], o))
-
+    
     return state
+
+
+def collect():
+    try:
+        version = pkg_resources.get_distribution('target-csv').version
+        conn = http.client.HTTPSConnection('collector.stitchdata.com', timeout=10)
+        conn.connect()
+        params = {
+            'e': 'se',
+            'aid': 'singer',
+            'se_ca': 'lifecycle',
+            'se_ac': 'open',
+            'se_la': 'target-csv',
+            'se_pr': 'version',
+            'se_va': version,
+        }
+        conn.request('GET', '/i?' + urllib.parse.urlencode(params))
+        response = conn.getresponse()
+        conn.close()
+    except:
+        logger.debug('Collection request failed')
 
 
 def main():
@@ -124,7 +138,7 @@ def main():
         config = {}
 
     if not config.get('disable_collection', False):
-        logger.info('Sending tap version information to stitchdata.com. ' +
+        logger.info('Sending version information to stitchdata.com. ' +
                     'To disable sending anonymous usage data, set ' +
                     'the config parameter "disable_collection" to true')
         threading.Thread(target=collect).start()
@@ -134,6 +148,7 @@ def main():
     state = persist_lines(config.get('delimiter', ','),
                           config.get('quotechar', '"'),
                           input)
+        
     emit_state(state)
     logger.debug("Exiting normally")
 
