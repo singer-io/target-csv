@@ -113,11 +113,9 @@ def collect():
         params = {
             'e': 'se',
             'aid': 'singer',
-            'se_ca': 'lifecycle',
+            'se_ca': 'target-csv',
             'se_ac': 'open',
-            'se_la': 'target-csv',
-            'se_pr': 'version',
-            'se_va': version,
+            'se_la': version,
         }
         conn.request('GET', '/i?' + urllib.parse.urlencode(params))
         response = conn.getresponse()
