@@ -12,7 +12,7 @@ import urllib
 import pkg_resources
 import collections
 
-from jsonschema import validate
+from jsonschema.validators import Draft4Validator
 import singer
 
 logger = singer.get_logger()
@@ -39,6 +39,7 @@ def persist_lines(delimiter, quotechar, lines):
     schemas = {}
     key_properties = {}
     headers = {}
+    validators = {}
     
     for line in lines:
         try:
@@ -58,7 +59,7 @@ def persist_lines(delimiter, quotechar, lines):
                 raise Exception("A record for stream {} was encountered before a corresponding schema".format(o['stream']))
 
             schema = schemas[o['stream']]
-            validate(o['record'], schema)
+            validators[o['stream']].validate(o['record'])
 
             filename = o['stream'] + '.csv'
             file_is_empty = (not os.path.isfile(filename)) or os.stat(filename).st_size == 0
@@ -95,6 +96,7 @@ def persist_lines(delimiter, quotechar, lines):
                 raise Exception("Line is missing required key 'stream': {}".format(line))
             stream = o['stream']
             schemas[stream] = o['schema']
+            validators[stream] = Draft4Validator(o['schema'])
             if 'key_properties' not in o:
                 raise Exception("key_properties field is required")
             key_properties[stream] = o['key_properties']
