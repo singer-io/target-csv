@@ -12,8 +12,11 @@ import urllib
 import pkg_resources
 import collections
 
-from jsonschema.validators import Draft4Validator
+import pendulum
+
+from jsonschema import validate
 import singer
+from singer.utils import strftime
 
 logger = singer.get_logger()
 
@@ -39,8 +42,9 @@ def persist_lines(delimiter, quotechar, lines):
     schemas = {}
     key_properties = {}
     headers = {}
-    validators = {}
     
+    now = strftime(pendulum.utcnow())
+
     for line in lines:
         try:
             o = json.loads(line)
@@ -59,9 +63,9 @@ def persist_lines(delimiter, quotechar, lines):
                 raise Exception("A record for stream {} was encountered before a corresponding schema".format(o['stream']))
 
             schema = schemas[o['stream']]
-            validators[o['stream']].validate(o['record'])
+            validate(o['record'], schema)
 
-            filename = o['stream'] + '.csv'
+            filename = o['stream'] + '-' + now + '.csv'
             file_is_empty = (not os.path.isfile(filename)) or os.stat(filename).st_size == 0
 
             flattened_record = flatten(o['record'])
@@ -96,7 +100,6 @@ def persist_lines(delimiter, quotechar, lines):
                 raise Exception("Line is missing required key 'stream': {}".format(line))
             stream = o['stream']
             schemas[stream] = o['schema']
-            validators[stream] = Draft4Validator(o['schema'])
             if 'key_properties' not in o:
                 raise Exception("key_properties field is required")
             key_properties[stream] = o['key_properties']
@@ -144,7 +147,6 @@ def main():
         threading.Thread(target=collect).start()
 
     input = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
-    state = None
     state = persist_lines(config.get('delimiter', ','),
                           config.get('quotechar', '"'),
                           input)
