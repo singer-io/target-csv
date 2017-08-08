@@ -12,8 +12,10 @@ import urllib
 import pkg_resources
 import collections
 
+import pendulum
 from jsonschema.validators import Draft4Validator
 import singer
+from singer.utils import strftime
 
 logger = singer.get_logger()
 
@@ -41,6 +43,8 @@ def persist_lines(delimiter, quotechar, lines):
     headers = {}
     validators = {}
     
+    now = strftime(pendulum.utcnow())
+
     for line in lines:
         try:
             o = json.loads(line)
@@ -61,7 +65,7 @@ def persist_lines(delimiter, quotechar, lines):
             schema = schemas[o['stream']]
             validators[o['stream']].validate(o['record'])
 
-            filename = o['stream'] + '.csv'
+            filename = o['stream'] + '-' + now + '.csv'
             file_is_empty = (not os.path.isfile(filename)) or os.stat(filename).st_size == 0
 
             flattened_record = flatten(o['record'])
@@ -107,7 +111,7 @@ def persist_lines(delimiter, quotechar, lines):
     return state
 
 
-def collect():
+def send_usage_stats():
     try:
         version = pkg_resources.get_distribution('target-csv').version
         conn = http.client.HTTPSConnection('collector.stitchdata.com', timeout=10)
@@ -141,10 +145,9 @@ def main():
         logger.info('Sending version information to stitchdata.com. ' +
                     'To disable sending anonymous usage data, set ' +
                     'the config parameter "disable_collection" to true')
-        threading.Thread(target=collect).start()
+        threading.Thread(target=send_usage_stats).start()
 
     input = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
-    state = None
     state = persist_lines(config.get('delimiter', ','),
                           config.get('quotechar', '"'),
                           input)
