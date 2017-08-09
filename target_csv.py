@@ -15,7 +15,6 @@ import collections
 import pendulum
 from jsonschema.validators import Draft4Validator
 import singer
-from singer.utils import strftime
 
 logger = singer.get_logger()
 
@@ -43,7 +42,7 @@ def persist_lines(delimiter, quotechar, lines):
     headers = {}
     validators = {}
     
-    now = strftime(pendulum.utcnow())
+    now = pendulum.utcnow().strftime('%Y%m%dT%H%M%S')
 
     for line in lines:
         try:
