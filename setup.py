@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='target-csv',
-      version='0.2.2',
+      version='0.2.3',
       description='Singer.io target for writing CSV files',
       author='Stitch',
       url='https://singer.io',
