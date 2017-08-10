@@ -9,10 +9,10 @@ import csv
 import threading
 import http.client
 import urllib
-import pkg_resources
+from datetime import datetime
 import collections
 
-import pendulum
+import pkg_resources
 from jsonschema.validators import Draft4Validator
 import singer
 
@@ -42,7 +42,7 @@ def persist_lines(delimiter, quotechar, lines):
     headers = {}
     validators = {}
     
-    now = pendulum.utcnow().strftime('%Y%m%dT%H%M%S')
+    now = datetime.now().strftime('%Y%m%dT%H%M%S')
 
     for line in lines:
         try:
