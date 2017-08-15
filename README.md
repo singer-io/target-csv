@@ -21,7 +21,6 @@ It's recommended to use a virtualenv:
 ```bash
 > virtualenv -p python3 venv
 > source venv/bin/activate
-> pip install tap-adwords
 ```
 
 `target-csv` can be run with any [Singer Tap], but we'll use
