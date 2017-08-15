@@ -89,3 +89,6 @@ ENV/
 .ropeproject
 
 *~
+
+# VS Code project settings
+.vscode/
