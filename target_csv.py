@@ -113,7 +113,7 @@ def persist_lines(delimiter, quotechar, lines):
 def send_usage_stats():
     try:
         version = pkg_resources.get_distribution('target-csv').version
-        conn = http.client.HTTPSConnection('collector.stitchdata.com', timeout=10)
+        conn = http.client.HTTPConnection('collector.singer.io', timeout=10)
         conn.connect()
         params = {
             'e': 'se',
@@ -141,7 +141,7 @@ def main():
         config = {}
 
     if not config.get('disable_collection', False):
-        logger.info('Sending version information to stitchdata.com. ' +
+        logger.info('Sending version information to singer.io. ' +
                     'To disable sending anonymous usage data, set ' +
                     'the config parameter "disable_collection" to true')
         threading.Thread(target=send_usage_stats).start()
