@@ -19,8 +19,10 @@ installation instructions for [Mac] or
 It's recommended to use a virtualenv:
 
 ```bash
-> virtualenv -p python3 venv
-> source venv/bin/activate
+ python3 -m venv ~/.virtualenvs/target-csv
+ source ~/.virtualenvs/target-csv/bin/activate
+ pip install -U pip setuptools
+ pip install -e '.[dev]'
 ```
 
 `target-csv` can be run with any [Singer Tap], but we'll use
