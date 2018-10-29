@@ -12,8 +12,18 @@ like Excel or simply storing a backup of the source data set.
 ### Install and Run
 
 First, make sure Python 3 is installed on your system or follow these
-installation instructions for [Mac](python-mac) or
-[Ubuntu](python-ubuntu).
+installation instructions for [Mac] or
+[Ubuntu].
+
+
+It's recommended to use a virtualenv:
+
+```bash
+ python3 -m venv ~/.virtualenvs/target-csv
+ source ~/.virtualenvs/target-csv/bin/activate
+ pip install -U pip setuptools
+ pip install -e '.[dev]'
+```
 
 `target-csv` can be run with any [Singer Tap], but we'll use
 [`tap-fixerio`][Fixerio] - which pulls currency exchange rate data
@@ -62,5 +72,5 @@ Copyright &copy; 2017 Stitch
 [Freshdesk]: https://github.com/singer-io/tap-freshdesk
 [Hubspot]: https://github.com/singer-io/tap-hubspot
 [Fixerio]: https://github.com/singer-io/tap-fixerio
-[python-mac]: http://docs.python-guide.org/en/latest/starting/install3/osx/
-[python-ubuntu]: https://www.digitalocean.com/community/tutorials/how-to-install-python-3-and-set-up-a-local-programming-environment-on-ubuntu-16-04
+[Mac]: http://docs.python-guide.org/en/latest/starting/install3/osx/
+[Ubuntu]: https://www.digitalocean.com/community/tutorials/how-to-install-python-3-and-set-up-a-local-programming-environment-on-ubuntu-16-04
