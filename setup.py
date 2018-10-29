@@ -11,7 +11,7 @@ setup(name='target-csv',
       py_modules=['target_csv'],
       install_requires=[
           'jsonschema==2.6.0',
-          'singer-python>=2.1.4',
+          'singer-python==2.1.4',
       ],
       entry_points='''
           [console_scripts]
