@@ -1,4 +1,5 @@
 {
     "delimiter": "\t",
-    "quotechar": "'"
+    "quotechar": "'",
+    "destination_path": ""
 }
