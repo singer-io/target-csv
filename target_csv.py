@@ -94,7 +94,7 @@ def persist_messages(delimiter, quotechar, messages):
             validators[stream] = Draft4Validator(o['schema'])
             key_properties[stream] = o['key_properties']
         else:
-            raise Exception("Unknown message type {} in message {}"
+            logger.warning("Unknown message type {} in message {}"
                             .format(o['type'], o))
 
     return state
