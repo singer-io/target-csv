@@ -4,63 +4,52 @@ A [Singer](https://singer.io) target that writes data to CSV files.
 
 ## How to use it
 
-`target-csv` works together with any other [Singer Tap] to move data
-from sources like [Braintree], [Freshdesk] and [Hubspot] to
-CSV-formatted files. It is commonly used for loading data into tools
-like Excel or simply storing a backup of the source data set.
+`target-csv` works together with any other [Singer Tap] to move data from sources like [Braintree], [Freshdesk] and [Hubspot] to CSV-formatted files. It is commonly used for loading data into tools like Excel or simply storing a backup of the source data set.
 
-### Install and Run
+### Install
 
-First, make sure Python 3 is installed on your system or follow these
-installation instructions for [Mac] or
-[Ubuntu].
+We will use [`tap-exchangeratesapi`][Exchangeratesapi] to pull currency exchange rate data from a public data set as an example.
 
+First, make sure Python 3 is installed on your system or follow these installation instructions for [Mac] or [Ubuntu].
 
-It's recommended to use a virtualenv:
+It is recommended to install each Tap and Target in a separate Python virtual environment to avoid conflicting dependencies between any Taps and Targets.
 
 ```bash
- python3 -m venv ~/.virtualenvs/target-csv
- source ~/.virtualenvs/target-csv/bin/activate
- pip install -U pip setuptools
- pip install -e '.[dev]'
+ # Install tap-exchangeratesapi in its own virtualenv
+python3 -m venv ~/.virtualenvs/tap-exchangeratesapi
+source ~/.virtualenvs/tap-exchangeratesapi/bin/activate
+pip install tap-exchangeratesapi
+deactivate
+
+# Install target-csv in its own virtualenv
+python3 -m venv ~/.virtualenvs/target-csv
+source ~/.virtualenvs/target-csv/bin/activate
+pip install target-csv
+deactivate
 ```
 
-`target-csv` can be run with any [Singer Tap], but we'll use
-[`tap-fixerio`][Fixerio] - which pulls currency exchange rate data
-from a public data set - as an example.
+### Run
 
-These commands will install `tap-fixerio` and `target-csv` with pip,
-and then run them together, piping the output of `tap-fixerio` to
-`target-csv`:
+We can now run `tap-exchangeratesapi` and pipe the output to `target-csv`.
 
 ```bash
-› pip install target-csv tap-fixerio
-› tap-fixerio | target-csv
-  INFO Replicating the latest exchange rate data from fixer.io
-  INFO Tap exiting normally
+~/.virtualenvs/tap-exchangeratesapi/bin/tap-exchangeratesapi | ~/.virtualenvs/target-csv/bin/target-csv
 ```
 
-The data will be written to a file called `exchange_rate.csv` in your
-working directory.
+The data will be written to a file called `exchange_rate-{timestamp}.csv` in your working directory.
 
 ```bash
-› cat exchange_rate.csv
+› cat exchange_rate-{timestamp}.csv
 AUD,BGN,BRL,CAD,CHF,CNY,CZK,DKK,GBP,HKD,HRK,HUF,IDR,ILS,INR,JPY,KRW,MXN,MYR,NOK,NZD,PHP,PLN,RON,RUB,SEK,SGD,THB,TRY,ZAR,EUR,USD,date
 1.3023,1.8435,3.0889,1.3109,1.0038,6.869,25.47,7.0076,0.79652,7.7614,7.0011,290.88,13317.0,3.6988,66.608,112.21,1129.4,19.694,4.4405,8.3292,1.3867,50.198,4.0632,4.2577,58.105,8.9724,1.4037,34.882,3.581,12.915,0.9426,1.0,2017-02-24T00:00:00Z
 ```
 
-If you're using a different Tap, substitute `tap-fixerio` in the final
-command above to the command used to run your Tap.
-
 ### Optional Configuration
 
-`target-csv` takes an optional configuration file that can be used to
-set formatting parameters like the delimiter - see
-[config.sample.json](config.sample.json) for examples. To run
-`target-csv` with the configuration file, use this command:
+`target-csv` takes an optional configuration file that can be used to set formatting parameters like the delimiter - see [config.sample.json](config.sample.json) for examples. To run `target-csv` with the configuration file, use this command:
 
 ```bash
-› tap-fixerio | target-csv -c my-config.json
+~/.virtualenvs/tap-exchangeratesapi/bin/tap-exchangeratesapi | ~/.virtualenvs/target-csv/bin/target-csv -c my-config.json
 ```
 
 ---
@@ -71,6 +60,6 @@ Copyright &copy; 2017 Stitch
 [Braintree]: https://github.com/singer-io/tap-braintree
 [Freshdesk]: https://github.com/singer-io/tap-freshdesk
 [Hubspot]: https://github.com/singer-io/tap-hubspot
-[Fixerio]: https://github.com/singer-io/tap-fixerio
+[Exchangeratesapi]: https://github.com/singer-io/tap-exchangeratesapi
 [Mac]: http://docs.python-guide.org/en/latest/starting/install3/osx/
 [Ubuntu]: https://www.digitalocean.com/community/tutorials/how-to-install-python-3-and-set-up-a-local-programming-environment-on-ubuntu-16-04
