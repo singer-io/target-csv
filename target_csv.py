@@ -35,7 +35,7 @@ def flatten(d, parent_key='', sep='__'):
             items.append((new_key, str(v) if type(v) is list else v))
     return dict(items)
         
-def persist_messages(delimiter, quotechar, messages):
+def persist_messages(delimiter, quotechar, messages, destination_path):
     state = None
     schemas = {}
     key_properties = {}
@@ -59,6 +59,7 @@ def persist_messages(delimiter, quotechar, messages):
             validators[o['stream']].validate(o['record'])
 
             filename = o['stream'] + '-' + now + '.csv'
+            filename = os.path.expanduser(os.path.join(destination_path, filename))
             file_is_empty = (not os.path.isfile(filename)) or os.stat(filename).st_size == 0
 
             flattened_record = flatten(o['record'])
@@ -139,7 +140,8 @@ def main():
     input_messages = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
     state = persist_messages(config.get('delimiter', ','),
                              config.get('quotechar', '"'),
-                             input_messages)
+                             input_messages,
+                             config.get('destination_path', ''))
 
     emit_state(state)
     logger.debug("Exiting normally")
