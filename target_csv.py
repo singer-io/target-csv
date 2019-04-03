@@ -35,7 +35,7 @@ def flatten(d, parent_key='', sep='__'):
             items.append((new_key, str(v) if type(v) is list else v))
     return dict(items)
         
-def persist_messages(delimiter, quotechar, messages, destination_path):
+def persist_messages(delimiter, quotechar, messages, destination_path, without_headers):
     state = None
     schemas = {}
     key_properties = {}
@@ -80,7 +80,7 @@ def persist_messages(delimiter, quotechar, messages, destination_path):
                                         extrasaction='ignore',
                                         delimiter=delimiter,
                                         quotechar=quotechar)
-                if file_is_empty:
+                if file_is_empty and not without_headers:
                     writer.writeheader()
 
                 writer.writerow(flattened_record)
@@ -123,14 +123,18 @@ def send_usage_stats():
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', help='Config file')
+    parser.add_argument('--without_headers',
+                        action='store_true',
+                        help='Do not export the headers.')
     args = parser.parse_args()
-
     if args.config:
         with open(args.config) as input_json:
             config = json.load(input_json)
     else:
         config = {}
-
+    without_headers = False
+    if args.without_headers:
+        without_headers = True
     if not config.get('disable_collection', False):
         logger.info('Sending version information to singer.io. ' +
                     'To disable sending anonymous usage data, set ' +
@@ -141,7 +145,8 @@ def main():
     state = persist_messages(config.get('delimiter', ','),
                              config.get('quotechar', '"'),
                              input_messages,
-                             config.get('destination_path', ''))
+                             config.get('destination_path', ''),
+                             without_headers)
 
     emit_state(state)
     logger.debug("Exiting normally")
