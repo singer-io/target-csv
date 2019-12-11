@@ -142,7 +142,7 @@ def main():
                              config.get('quotechar', '"'),
                              input_messages,
                              config.get('destination_path', ''),
-                             config.get('validate_records', ''))
+                             config.get('validate_records', True))
 
     emit_state(state)
     logger.debug("Exiting normally")
