@@ -12,6 +12,7 @@ import urllib
 from datetime import datetime
 import collections
 import pkg_resources
+import shutil
 
 from jsonschema.validators import Draft4Validator
 import singer
@@ -52,31 +53,47 @@ def persist_messages(delimiter, quotechar, messages, destination_path):
             raise
         message_type = o['type']
         if message_type == 'RECORD':
-            if o['stream'] not in schemas:
+            stream = o['stream']
+            if stream not in schemas:
                 raise Exception("A record for stream {}"
-                                "was encountered before a corresponding schema".format(o['stream']))
+                                "was encountered before a corresponding schema".format(stream))
 
-            validators[o['stream']].validate(o['record'])
+            validators[stream].validate(o['record'])
 
-            filename = o['stream'] + '-' + now + '.csv'
+            filename = stream + '-' + now + '.csv'
             filename = os.path.expanduser(os.path.join(destination_path, filename))
             file_is_empty = (not os.path.isfile(filename)) or os.stat(filename).st_size == 0
 
             flattened_record = flatten(o['record'])
 
-            if o['stream'] not in headers and not file_is_empty:
-                with open(filename, 'r') as csvfile:
-                    reader = csv.reader(csvfile,
-                                        delimiter=delimiter,
-                                        quotechar=quotechar)
-                    first_line = next(reader)
-                    headers[o['stream']] = first_line if first_line else flattened_record.keys()
-            else:
-                headers[o['stream']] = flattened_record.keys()
+            if stream not in headers:
+                first_line = None
+                if not file_is_empty:
+                    with open(filename, 'r') as csvfile:
+                        reader = csv.reader(csvfile,
+                                            delimiter=delimiter,
+                                            quotechar=quotechar)
+                        first_line = next(reader)
+                headers[stream] = first_line if first_line else list(flattened_record.keys())
+
+            if not set(headers[stream]).issuperset(flattened_record.keys()):
+                # Current record has unseen keys, not part of the headers
+                missing = set(flattened_record.keys()).difference(headers[stream])
+
+                # Append headers to end of first line
+                with open(filename) as f_reader:
+                    current_header = f_reader.readline()
+                    new_header = current_header.replace('\n', delimiter + delimiter.join(missing) + '\n')
+
+                    with open(filename, 'w') as f_writer:
+                        f_writer.write(new_header)
+                        shutil.copyfileobj(f_reader, f_writer)
+
+                headers[stream] += missing
 
             with open(filename, 'a') as csvfile:
                 writer = csv.DictWriter(csvfile,
-                                        headers[o['stream']],
+                                        headers[stream],
                                         extrasaction='ignore',
                                         delimiter=delimiter,
                                         quotechar=quotechar)
