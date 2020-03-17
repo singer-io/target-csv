@@ -76,20 +76,21 @@ def persist_messages(delimiter, quotechar, messages, destination_path):
                         first_line = next(reader)
                 headers[stream] = first_line if first_line else list(flattened_record.keys())
 
-            if not set(headers[stream]).issuperset(flattened_record.keys()):
-                # Current record has unseen keys, not part of the headers
-                missing = set(flattened_record.keys()).difference(headers[stream])
+            # Check current record for unseen field.
+            missing_header_fields = set(flattened_record.keys()).difference(headers[stream])
 
-                # Append headers to end of first line
+            if missing_header_fields:
+                # Update header, append missing fields to end of first line
                 with open(filename) as f_reader:
                     current_header = f_reader.readline()
-                    new_header = current_header.replace('\n', delimiter + delimiter.join(missing) + '\n')
+                    extra_header = delimiter + delimiter.join(missing_header_fields)
+                    new_header = current_header[:-1] + extra_header + '\n'
 
                     with open(filename, 'w') as f_writer:
                         f_writer.write(new_header)
                         shutil.copyfileobj(f_reader, f_writer)
 
-                headers[stream] += missing
+                headers[stream] += missing_header_fields
 
             with open(filename, 'a') as csvfile:
                 writer = csv.DictWriter(csvfile,
