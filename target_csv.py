@@ -84,7 +84,8 @@ def persist_messages(delimiter, quotechar, messages, destination_path):
                 with open(filename) as f_reader:
                     current_header = f_reader.readline()
                     extra_header = delimiter + delimiter.join(missing_header_fields)
-                    new_header = current_header[:-1] + extra_header + '\n'
+                    # Use same separator as the csv.DictWriter which defaults to 'excel'
+                    new_header = current_header.rstrip() + extra_header + csv.excel.lineterminator
 
                     with open(filename, 'w') as f_writer:
                         f_writer.write(new_header)
