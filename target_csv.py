@@ -13,6 +13,7 @@ from datetime import datetime
 import collections
 import pkg_resources
 import shutil
+import tempfile
 
 from jsonschema.validators import Draft4Validator
 import singer
@@ -80,16 +81,21 @@ def persist_messages(delimiter, quotechar, messages, destination_path):
             missing_header_fields = set(flattened_record.keys()).difference(headers[stream])
 
             if missing_header_fields:
+                tmp_filename = filename + ".tmp"
                 # Update header, append missing fields to end of first line
+
                 with open(filename) as f_reader:
                     current_header = f_reader.readline()
                     extra_header = delimiter + delimiter.join(missing_header_fields)
                     # Use same separator as the csv.DictWriter which defaults to 'excel'
                     new_header = current_header.rstrip() + extra_header + csv.excel.lineterminator
 
-                    with open(filename, 'w') as f_writer:
-                        f_writer.write(new_header)
-                        shutil.copyfileobj(f_reader, f_writer)
+                    with open(tmp_filename, "w") as tmp_f:
+                        tmp_f.write(new_header)
+                        shutil.copyfileobj(f_reader, tmp_f)
+
+                # Atomic move after updated file
+                shutil.move(tmp_filename, filename)
 
                 headers[stream] += missing_header_fields
 
