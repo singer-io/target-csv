@@ -32,7 +32,7 @@ def flatten(d, parent_key='', sep='__'):
         if isinstance(v, collections.MutableMapping):
             items.extend(flatten(v, new_key, sep=sep).items())
         else:
-            items.append((new_key, json.dumps(v) if type(v) is list else v))
+            items.append((new_key, json.dumps(v, ensure_ascii=False) if type(v) is list else v))
     return dict(items)
         
 def persist_messages(delimiter, quotechar, messages, destination_path):

@@ -13,6 +13,9 @@ setup(name='target-csv',
           'jsonschema==2.6.0',
           'singer-python==2.1.4',
       ],
+      extras_require={
+            'dev': ['nose']
+      },
       entry_points='''
           [console_scripts]
           target-csv=target_csv:main
