@@ -13,7 +13,6 @@ from datetime import datetime
 import collections
 import pkg_resources
 import shutil
-import tempfile
 
 from jsonschema.validators import Draft4Validator
 import singer
@@ -36,13 +35,14 @@ def flatten(d, parent_key='', sep='__'):
         else:
             items.append((new_key, str(v) if type(v) is list else v))
     return dict(items)
-        
-def persist_messages(delimiter, quotechar, messages, destination_path):
+
+def persist_messages(delimiter, quotechar, messages, destination_path, rewrite_headers):
     state = None
     schemas = {}
     key_properties = {}
     headers = {}
     validators = {}
+    files_incorrect_headers = {}  # Keep track of files with incorrect headers
 
     now = datetime.now().strftime('%Y%m%dT%H%M%S')
 
@@ -70,8 +70,8 @@ def persist_messages(delimiter, quotechar, messages, destination_path):
             if stream not in headers:
                 first_line = None
                 if not file_is_empty:
-                    with open(filename, 'r') as csvfile:
-                        reader = csv.reader(csvfile,
+                    with open(filename, 'r') as csv_f:
+                        reader = csv.reader(csv_f,
                                             delimiter=delimiter,
                                             quotechar=quotechar)
                         first_line = next(reader)
@@ -81,23 +81,8 @@ def persist_messages(delimiter, quotechar, messages, destination_path):
             missing_header_fields = set(flattened_record.keys()).difference(headers[stream])
 
             if missing_header_fields:
-                tmp_filename = filename + ".tmp"
-                # Update header, append missing fields to end of first line
-
-                with open(filename) as f_reader:
-                    current_header = f_reader.readline()
-                    extra_header = delimiter + delimiter.join(missing_header_fields)
-                    # Use same separator as the csv.DictWriter which defaults to 'excel'
-                    new_header = current_header.rstrip() + extra_header + csv.excel.lineterminator
-
-                    with open(tmp_filename, "w") as tmp_f:
-                        tmp_f.write(new_header)
-                        shutil.copyfileobj(f_reader, tmp_f)
-
-                # Atomic move after updated file
-                shutil.move(tmp_filename, filename)
-
                 headers[stream] += missing_header_fields
+                files_incorrect_headers[filename] = headers[stream]
 
             with open(filename, 'a') as csvfile:
                 writer = csv.DictWriter(csvfile,
@@ -121,9 +106,41 @@ def persist_messages(delimiter, quotechar, messages, destination_path):
             key_properties[stream] = o['key_properties']
         else:
             logger.warning("Unknown message type {} in message {}"
-                            .format(o['type'], o))
+                           .format(o['type'], o))
+
+    if files_incorrect_headers and rewrite_headers.lower() == 'true':
+        rewrite_csv(files_incorrect_headers, delimiter, quotechar)
 
     return state
+
+
+def rewrite_csv(files_incorrect_headers, delimiter, quotechar):
+    """
+    Rewrite the CSV-file(s) to update the first line, the header.
+
+    Thereby duplicate the data and overwrite the original file afterwards.
+    """
+    logger.info('Rewriting {} csv file(s) with incorrect headers.'
+                .format(len(files_incorrect_headers)))
+
+    for filename, correct_header in files_incorrect_headers.items():
+        tmp_filename = filename + ".tmp"
+
+        with open(filename, "r") as csv_f:
+            csv_f.readline()  # ignore the incorrect header
+
+            with open(tmp_filename, "w") as tmp_f:
+                writer = csv.DictWriter(tmp_f,
+                                        correct_header,
+                                        extrasaction='ignore',
+                                        delimiter=delimiter,
+                                        quotechar=quotechar)
+                # Write correct headers and rest of the content.
+                writer.writeheader()
+                shutil.copyfileobj(csv_f, tmp_f)
+
+        # Atomic move after updating file
+        shutil.move(tmp_filename, filename)
 
 
 def send_usage_stats():
@@ -166,7 +183,8 @@ def main():
     state = persist_messages(config.get('delimiter', ','),
                              config.get('quotechar', '"'),
                              input_messages,
-                             config.get('destination_path', ''))
+                             config.get('destination_path', ''),
+                             config.get('rewrite_headers', False))
 
     emit_state(state)
     logger.debug("Exiting normally")
