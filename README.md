@@ -52,6 +52,8 @@ AUD,BGN,BRL,CAD,CHF,CNY,CZK,DKK,GBP,HKD,HRK,HUF,IDR,ILS,INR,JPY,KRW,MXN,MYR,NOK,
 ~/.virtualenvs/tap-exchangeratesapi/bin/tap-exchangeratesapi | ~/.virtualenvs/target-csv/bin/target-csv -c my-config.json
 ```
 
+Config option **rewrite_headers** (default: `false`) can be used to rewrite the header of the csv-file(s) when the header is updated during the processing. This can happen when new fields are discovered during flattening of records. New discovered header fields are appended at the end of the header. Rewriting happens at the end of the stream, so no performance impact during streaming. Only the header is updated, other lines are copied as-is.
+
 ---
 
 Copyright &copy; 2017 Stitch
