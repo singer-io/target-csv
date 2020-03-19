@@ -10,4 +10,4 @@ jobs:
           name: Run tests
           command: |
             pip install -e '.[dev]'
-            nose -v
+            nosetests -v
