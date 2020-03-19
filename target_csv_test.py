@@ -22,5 +22,9 @@ def test_flatten_list_complex():
 
 
 def test_flatten_list_complex_non_ascii():
-    res = target_csv.flatten({"f1": [{"japanese": "私の問題を", "russian": "Удовлетворены"}]})
+    res = target_csv.flatten(
+        {"f1": [
+            {"japanese": "私の問題を",
+             "russian": "Удовлетворены"}]
+        })
     assert res == {"f1": '[{"japanese": "私の問題を", "russian": "Удовлетворены"}]'}
