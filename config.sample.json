@@ -1,5 +1,6 @@
 {
     "delimiter": "\t",
     "quotechar": "'",
-    "destination_path": ""
+    "destination_path": "",
+    "rewrite_headers": true
 }
