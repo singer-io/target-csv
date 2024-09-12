@@ -35,7 +35,7 @@ def flatten(d, parent_key='', sep='__'):
             items.append((new_key, str(v) if type(v) is list else v))
     return dict(items)
         
-def persist_messages(delimiter, quotechar, messages, destination_path):
+def persist_messages(delimiter, quotechar, messages, destination_path, validate_records):
     state = None
     schemas = {}
     key_properties = {}
@@ -55,8 +55,8 @@ def persist_messages(delimiter, quotechar, messages, destination_path):
             if o['stream'] not in schemas:
                 raise Exception("A record for stream {}"
                                 "was encountered before a corresponding schema".format(o['stream']))
-
-            validators[o['stream']].validate(o['record'])
+            if validate_records:
+                validators[o['stream']].validate(o['record'])
 
             filename = o['stream'] + '-' + now + '.csv'
             filename = os.path.expanduser(os.path.join(destination_path, filename))
@@ -141,7 +141,8 @@ def main():
     state = persist_messages(config.get('delimiter', ','),
                              config.get('quotechar', '"'),
                              input_messages,
-                             config.get('destination_path', ''))
+                             config.get('destination_path', ''),
+                             config.get('validate_records', True))
 
     emit_state(state)
     logger.debug("Exiting normally")
